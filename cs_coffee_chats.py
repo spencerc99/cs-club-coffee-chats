@@ -67,10 +67,16 @@ def mentee_over_mentor_weight_fn(mentor, mentee):
 def mentor_over_mentee_weight_fn(mentor, mentee):
     mentor_interests = set(parse_interests(mentor[interests_idx]))
     mentee_interests = set(parse_interests(mentee[interests_idx]))
+    if len(mentee_interests) == 1 and 'idk' in mentee_interests:
+        return .01
+    # disregard idk
+    mentor_interests.discard('idk')
+    mentee_interests.discard('idk')
     return len(mentor_interests.intersection(mentee_interests)) / len(mentor_interests)
 
 for mentor in mentors:
-    weighted_match_fn = mentee_over_mentor_weight_fn
+    # weighted_match_fn = mentee_over_mentor_weight_fn
+    weighted_match_fn = mentor_over_mentee_weight_fn
     mentor_to_mentees[mentor[name_idx]] = \
         sorted(filter(lambda x: x[1] > 0, [((mentee[netid_idx], mentee[name_idx]), weighted_match_fn(mentor, mentee)) for mentee in mentees \
                     if year_to_int[mentee[year_idx]] < year_to_int[mentor[year_idx]]]), \
@@ -89,9 +95,10 @@ num_per_mentor = 3
 
 #TODO: Change sort to generator that resorts after each matched removal
 
+# CHANGE ORDER TO PRIORITIZE LEAST WEIGHTED FIRST
 sorted_mentor_to_mentee_items = sorted(mentor_to_mentees.items(), key=lambda x: x[1][0][1] if len(x[1]) > 0 else 0, reverse=True)
 
-mentee_netids = set([mentee[netid_idx] for mentee in mentees])
+mentee_netids = set([(mentee[netid_idx], mentee[name_idx]) for mentee in mentees])
 
 for i in range(num_per_mentor):
     for mentor, mentees_and_weights in sorted_mentor_to_mentee_items: # sort by the first highest weighting so we can start at the lowest
@@ -111,11 +118,11 @@ for i in range(num_per_mentor):
         if not was_matched:
             print ("Could not find a match for %s for mentee %d" % (mentor, i+1))
 
-    if mentee_netids.difference(matched) == 0:
+    if len(mentee_netids.difference(matched)) == 0:
         break
 
 print ("Number of mentees per mentor: {}".format(i+1))
-
+print ("Mentees not matched: {}".format(mentee_netids.difference(matched)))
 # results = {'Jay Ryu': ['ch59', 'sj49'], 'Alisha Stupp ': ['zl55', 'vk20'], 'Spencer Chang': ['Aa104', 'Lpb3'], 'tian udomsak': ['am118', 'hjo2'], 'Abhijeet mulgund': ['rab9', 'acm9'], 'ani kunaparaju': ['ob10', 'jpg7'], 'Kevin Lin': ['jw81', 'rq4'], 'Kenneth Li': ['jpa4', 'tl54'], 'Mayu Tobin-Miyaji': ['mm99', 'Stx1'], 'Cara Tan': ['qs6', 'cww3 '], 'Rui Zheng': ['kk49', 'kgz1'], 'Jeffrey Sheng': ['lg43', 'vah3'], 'Anthony Tzen': ['ez8', 'mf43'], 'Cade Ritter': ['Ts47', 'hk34'], 'Raymond Yuan': ['jf52', 'Mpa5']}
 
 # print(final_pairing)
